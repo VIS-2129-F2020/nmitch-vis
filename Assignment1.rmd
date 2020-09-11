@@ -1,0 +1,57 @@
+---
+title: "Assignment 1"
+author: "Nickie Mitch"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Libraries
+
+```{r load libraries, message=FALSE}
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+```
+
+## Loading Data
+```{r view variables, message=FALSE}
+area_vars_2010 <- load_variables(2010, "sf1")
+```
+
+``` {r load variables, message=FALSE}
+vars <- c(tot_housing_units = "H001001",
+          tot_vacant = "H003003",
+          tot_one_person_hh = "P019002",
+          tot_rented = "H004004",
+          tot_urban = "H002002",
+          tot_housing_for_migrants = "H005007",
+          tot_pop = "P003001", 
+          tot_female = "P012026",
+          tot_male = "P012002")
+SD_tracts <- get_decennial(geography = "tract", variables = vars,
+                           state = "IN", county = "Bartholomew",
+                           output = "wide") %>%
+  mutate(urban = (tot_urban == tot_housing_units) ,
+         pct_vacant = tot_vacant / tot_housing_units,
+         pct_rented = tot_rented / tot_housing_units,
+         majority_gender = case_when(
+           tot_female / tot_pop > 0.5 ~ "female",
+           tot_male / tot_pop > 0.5 ~ "male",
+           TRUE ~ "None")) %>%
+  filter(tot_pop > 0, tot_housing_units > 0) %>%
+  select(GEOID, urban, majority_gender, pct_rented, pct_vacant, tot_one_person_hh, tot_housing_for_migrants) 
+
+```
+
+## Displaying selected variables
+
+```{r show loaded microdata variables, message=FALSE}
+SD_tracts
+```
+
+
+
