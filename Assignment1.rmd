@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Loading Libraries
+## Loading libraries
 
 ```{r load libraries, message=FALSE}
 library(tidycensus)
@@ -17,22 +17,22 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-## Loading Data
+## Reviewing variables
 ```{r view variables, message=FALSE}
 area_vars_2010 <- load_variables(2010, "sf1")
 ```
 
+##Selecting and loading variables
 ``` {r load variables, message=FALSE}
 vars <- c(tot_housing_units = "H001001",
           tot_vacant = "H003003",
           tot_one_person_hh = "P019002",
           tot_rented = "H004004",
           tot_urban = "H002002",
-          tot_housing_for_migrants = "H005007",
           tot_pop = "P003001", 
           tot_female = "P012026",
           tot_male = "P012002")
-SD_tracts <- get_decennial(geography = "tract", variables = vars,
+Barth_tracts <- get_decennial(geography = "tract", variables = vars,
                            state = "IN", county = "Bartholomew",
                            output = "wide") %>%
   mutate(urban = (tot_urban == tot_housing_units) ,
@@ -43,15 +43,39 @@ SD_tracts <- get_decennial(geography = "tract", variables = vars,
            tot_male / tot_pop > 0.5 ~ "male",
            TRUE ~ "None")) %>%
   filter(tot_pop > 0, tot_housing_units > 0) %>%
-  select(GEOID, urban, majority_gender, pct_rented, pct_vacant, tot_one_person_hh, tot_housing_for_migrants) 
+  select(GEOID, urban, majority_gender, pct_rented, pct_vacant, tot_one_person_hh, tot_pop) 
 
 ```
 
 ## Displaying selected variables
 
 ```{r show loaded microdata variables, message=FALSE}
-SD_tracts
+Barth_tracts
 ```
 
-
+## Figure 1 - Scatterplot with all variables
+```{r load figure 1}
+ggplot(Barth_tracts, 
+       aes(x = pct_rented,
+           y = pct_vacant,
+           size = tot_one_person_hh,
+           shape = urban,
+           color = majority_gender,
+           alpha = tot_pop)) +
+  geom_point() +
+  scale_size_continuous(name = "Total one-person households in tract") +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(10, 80, by = 10)) +
+  scale_color_discrete(name = "Majority gender",
+                       labels = c("Male",
+                       "Female")) +
+  scale_alpha_continuous(name = "Total population of tract") +
+  scale_shape(name = element_blank(), 
+              labels = c("Urban tract", "Rural tract")) +
+  theme_bw() +
+  theme(legend.key.size = unit(0.1, "cm"))
+```
 
