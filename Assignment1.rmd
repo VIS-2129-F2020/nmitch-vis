@@ -18,11 +18,13 @@ library(ggplot2)
 ```
 
 ## Reviewing variables
+
 ```{r view variables, message=FALSE}
 area_vars_2010 <- load_variables(2010, "sf1")
 ```
 
-##Selecting and loading variables
+## Selecting and loading variables
+
 ``` {r load variables, message=FALSE}
 vars <- c(tot_housing_units = "H001001",
           tot_vacant = "H003003",
@@ -54,7 +56,8 @@ Barth_tracts
 ```
 
 ## Figure 1 - Scatterplot with all variables
-```{r load figure 1}
+
+```{r generate figure 1}
 ggplot(Barth_tracts, 
        aes(x = pct_rented,
            y = pct_vacant,
@@ -79,3 +82,74 @@ ggplot(Barth_tracts,
   theme(legend.key.size = unit(0.1, "cm"))
 ```
 
+## Figure 2 - Bar chart with all categorical variables
+
+```{r generate figure 2}
+ggplot(Barth_tracts, aes(x = majority_gender, fill = urban)) +
+  geom_bar() +
+  scale_y_continuous(name = "Number of tracts") +
+  scale_x_discrete(name = "Majority gender",
+                       labels = c("Male", 
+                                  "Female")) +
+  scale_fill_discrete(name = element_blank(),
+                        labels = c("Urban tracts",
+                                   "Rural tracts")) +
+  theme_bw() 
+```
+
+## Figure 3 - Scatterplot with two continuous variables and one categorical variable
+
+```{r generate figure 3}
+ggplot(Barth_tracts, 
+       aes(x = pct_vacant,
+           y = tot_pop,
+           color = urban)) +
+  geom_point() +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  scale_color_discrete(name = "Setting",
+                       labels = c("urban", "rural")) +
+  theme_bw()
+```
+
+## Figure 4 - Scatterplot with two continuous variables and one categorical variable with a trendline
+
+
+```{r generate figure 4}
+ggplot(Barth_tracts, 
+       aes(x = pct_vacant,
+           y = tot_pop,
+           color = urban)) +
+  geom_point() +
+  stat_smooth(method = "lm") +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  scale_color_discrete(name = "Setting",
+                       labels = c("urban", "rural")) +
+  theme_bw()
+```
+
+## Figure 5 - Scatterplot in Polar Coordinate System with Two Continuous Variables and one categorical variable
+
+```{r generate figure 5}
+ggplot(Barth_tracts, 
+       aes(x = pct_vacant,
+           y = tot_pop,
+           color = majority_gender)) +
+  geom_point() +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  scale_color_discrete(name = "Majority Gender",
+                       labels = c("male", "female")) +
+  coord_polar(theta = "x") +
+  theme_bw()
+```
