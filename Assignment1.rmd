@@ -153,3 +153,19 @@ ggplot(Barth_tracts,
   coord_polar(theta = "x") +
   theme_bw()
 ```
+
+## Figure 6 - Scatterplot with two continuous variables
+
+```{r generate figure 6}
+ggplot(Barth_tracts, 
+       aes(x = pct_rented,
+           y = tot_pop,)) +
+  geom_point(size = 4) +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  theme_bw() +
+  theme(legend.key.size = unit(0.1, "cm"))
+```
