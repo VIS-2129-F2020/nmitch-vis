@@ -44,7 +44,7 @@ India_Everest <- "+proj=lcc +lat_1=26 +lat_0=26 +lon_0=90 +k_0=0.99878641 +x_0=2
 ```
 
 ## Reprojection 1 - Indian 1960 / UTM zone 48N 
-##### Source: SpatialReference.org
+###### Source: SpatialReference.org
 ```{r reprojection 1}
 ggplot(india_states) +
   geom_sf() +
@@ -53,7 +53,7 @@ ggplot(india_states) +
 ```
 
 ## Reprojection 2 - Oblique Mercator
-##### Source: Proj.org
+###### Source: Proj.org
 ```{r reprojection 2}
 ggplot(india_states) +
   geom_sf() +
@@ -62,7 +62,7 @@ ggplot(india_states) +
 ```
 
 ## Reprojection 3 - Kalyanpur IIB Everest 1956
-##### Source: SpatialReference.org
+###### Source: SpatialReference.org
 ```{r reprojection 3}
 ggplot(india_states) +
   geom_sf() +
@@ -70,4 +70,71 @@ ggplot(india_states) +
   theme_bw()
 ```
 
+## Transform Coordinate System to UTM Zone 48N for Displaying Variable
+```{r transform}
+states_transformed <- india_states %>%
+  st_transform(crs = India_UTM48N)
+```
+
+## Load Variable - Active COVID-19 Cases as of 9/18/2020
+###### Source: https://www.statista.com/statistics/1103458/india-novel-coronavirus-covid-19-cases-by-state/ (manually converted to .csv)
+###### Note: Statista reports data for the Andaman, Nicobar, Daman, and Diu Islands together while rnaturalearthhires considers them separately as the Andaman and Nicobar Islands and the Daman and Diu Islands. For the purposes of this project, I divded the data reported by Statista in half and assigned one half each to the Andaman and Nicobar Islands and the Daman and Diu Islands.
+
+```{r load variable, message=FALSE}
+covid_india <- read_csv("assignment2.csv")
+covid_states <-states_transformed %>%
+  left_join(covid_india, by = c("name" = "State")) %>%
+  select(name, spop, Active_Cases)
+covid_states
+```
+
+## Chloropleth Map 
+```{r chlorpleth map}
+ggplot(covid_states, aes(fill = Active_Cases)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of\nactive confirmed\nCOVID-19\ncases as of\nSeptember 18, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())+
+  theme(legend.position = "left")
+```
+
+## Non-continuous Cartogram
+```{r cartogram}
+covid_cartogram_ncont <- covid_states %>%
+  cartogram_ncont("spop")
+
+ggplot(covid_cartogram_ncont, aes(fill = Active_Cases)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of\nactive confirmed\nCOVID-19\ncases as of\nSeptember 18, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())+
+  theme(legend.position = "left")
+```
+
+## Proportional Symbol Map
+```{r proportional symbol map, results='hide', message=FALSE}
+covid_centeroids <- covid_states %>%
+  st_centroid()
+
+ggplot(states_transformed) +
+  geom_sf(fill=NA, color= "forest green") +
+  geom_sf(data = covid_centeroids, 
+          aes(size = Active_Cases),
+          alpha = 0.5, color = "orange") +
+scale_size_continuous(name = "Number of active confirmed\nCOVID-19 cases as of\nSeptember 18, 2020",
+    breaks = seq(5000, 500000, by = 75000),
+    labels = formatC(seq(5000, 500000, by = 75000), 
+                     big.mark = ",", format = "f", digits = 0),
+    range = c(0, 20)) +
+  theme_void()+ 
+  theme(legend.position = "top")
+```
 
