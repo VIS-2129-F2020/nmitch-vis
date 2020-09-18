@@ -1,0 +1,73 @@
+---
+title: "Assignment 2"
+author: "Nickie Mitch"
+date: "9/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Load Libraries 
+```{r load libraries, message=FALSE}
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rnaturalearthhires)
+library(tidyverse)
+library(ggspatial)
+library(cartogram)
+library(ggthemes)
+```
+
+## Equirectangular Large Area Map - India with States
+```{r, India map}
+india_states <- ne_states(country = "India", returnclass = "sf")
+
+india_map <- ggplot(india_states) +
+  geom_sf() +
+  theme_bw()
+
+india_map
+```
+
+#### Load Reprojection Coordinate Reference Systems 
+```{r load coordinate reference systems}
+#Indian 1960 / UTM zone 48N
+India_UTM48N <- "+proj=utm +zone=48 +a=6377276.345 +b=6356075.41314024 +units=m +no_defs"
+#Oblique Mercator
+India_OM <- "+proj=omerc +lonc=0 +alpha=90 +ellps=GRS80"
+#Kalyanpur IIB Everest 1956
+India_Everest <- "+proj=lcc +lat_1=26 +lat_0=26 +lon_0=90 +k_0=0.99878641 +x_0=2743195.5 +y_0=914398.5 +a=6377301.243 +b=6356100.230165384 +towgs84=295,736,257,0,0,0,0 +units=m +no_defs"
+```
+
+## Reprojection 1 - Indian 1960 / UTM zone 48N 
+##### Source: SpatialReference.org
+```{r reprojection 1}
+ggplot(india_states) +
+  geom_sf() +
+  coord_sf(crs = India_UTM48N) +
+  theme_bw()
+```
+
+## Reprojection 2 - Oblique Mercator
+##### Source: Proj.org
+```{r reprojection 2}
+ggplot(india_states) +
+  geom_sf() +
+  coord_sf(crs = India_OM) +
+  theme_bw()
+```
+
+## Reprojection 3 - Kalyanpur IIB Everest 1956
+##### Source: SpatialReference.org
+```{r reprojection 3}
+ggplot(india_states) +
+  geom_sf() +
+  coord_sf(crs = India_Everest) +
+  theme_bw()
+```
+
+
