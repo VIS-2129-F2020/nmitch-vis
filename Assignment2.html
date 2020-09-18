@@ -509,10 +509,9 @@ ggplot(covid_cartogram_ncont, aes(fill = Active_Cases)) +
 <div id="proportional-symbol-map" class="section level2">
 <h2>Proportional Symbol Map</h2>
 <pre class="r"><code>covid_centeroids &lt;- covid_states %&gt;%
-  st_centroid()</code></pre>
-<pre><code>## Warning in st_centroid.sf(.): st_centroid assumes attributes are constant over
-## geometries of x</code></pre>
-<pre class="r"><code>ggplot(states_transformed) +
+  st_centroid()
+
+ggplot(states_transformed) +
   geom_sf(fill=NA, color= &quot;forest green&quot;) +
   geom_sf(data = covid_centeroids, 
           aes(size = Active_Cases),

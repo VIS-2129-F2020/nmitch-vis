@@ -125,7 +125,7 @@ ggplot(covid_cartogram_ncont, aes(fill = Active_Cases)) +
 # Part 2 
 
 ## Proportional Symbol Map
-```{r proportional symbol map, results='hide', message=FALSE}
+```{r proportional symbol map, warning=FALSE}
 covid_centeroids <- covid_states %>%
   st_centroid()
 
