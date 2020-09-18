@@ -22,7 +22,9 @@ library(cartogram)
 library(ggthemes)
 ```
 
-## Equirectangular Large Area Map - India with States
+# Part 1 
+
+### Equirectangular Large Area Map - India with States
 ```{r, India map}
 india_states <- ne_states(country = "India", returnclass = "sf")
 
@@ -33,7 +35,7 @@ india_map <- ggplot(india_states) +
 india_map
 ```
 
-#### Load Reprojection Coordinate Reference Systems 
+### Load Reprojection Coordinate Reference Systems 
 ```{r load coordinate reference systems}
 #Indian 1960 / UTM zone 48N
 India_UTM48N <- "+proj=utm +zone=48 +a=6377276.345 +b=6356075.41314024 +units=m +no_defs"
@@ -43,7 +45,7 @@ India_OM <- "+proj=omerc +lonc=0 +alpha=90 +ellps=GRS80"
 India_Everest <- "+proj=lcc +lat_1=26 +lat_0=26 +lon_0=90 +k_0=0.99878641 +x_0=2743195.5 +y_0=914398.5 +a=6377301.243 +b=6356100.230165384 +towgs84=295,736,257,0,0,0,0 +units=m +no_defs"
 ```
 
-## Reprojection 1 - Indian 1960 / UTM zone 48N 
+### Reprojection 1 - Indian 1960 / UTM zone 48N 
 ###### Source: SpatialReference.org
 ```{r reprojection 1}
 ggplot(india_states) +
@@ -52,7 +54,7 @@ ggplot(india_states) +
   theme_bw()
 ```
 
-## Reprojection 2 - Oblique Mercator
+### Reprojection 2 - Oblique Mercator
 ###### Source: Proj.org
 ```{r reprojection 2}
 ggplot(india_states) +
@@ -61,7 +63,7 @@ ggplot(india_states) +
   theme_bw()
 ```
 
-## Reprojection 3 - Kalyanpur IIB Everest 1956
+### Reprojection 3 - Kalyanpur IIB Everest 1956
 ###### Source: SpatialReference.org
 ```{r reprojection 3}
 ggplot(india_states) +
@@ -70,7 +72,9 @@ ggplot(india_states) +
   theme_bw()
 ```
 
-## Transform Coordinate System to UTM Zone 48N for Displaying Variable
+# Part 2 
+
+### Transform Coordinate System to UTM Zone 48N for Displaying Variable
 ```{r transform}
 states_transformed <- india_states %>%
   st_transform(crs = India_UTM48N)
@@ -118,6 +122,7 @@ ggplot(covid_cartogram_ncont, aes(fill = Active_Cases)) +
   theme(legend.background = element_blank())+
   theme(legend.position = "left")
 ```
+# Part 2 
 
 ## Proportional Symbol Map
 ```{r proportional symbol map, results='hide', message=FALSE}
