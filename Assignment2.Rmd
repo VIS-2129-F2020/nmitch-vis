@@ -78,7 +78,7 @@ states_transformed <- india_states %>%
 
 ## Load Variable - Active COVID-19 Cases as of 9/18/2020
 ###### Source: https://www.statista.com/statistics/1103458/india-novel-coronavirus-covid-19-cases-by-state/ (manually converted to .csv)
-###### Note: Statista reports data for the Andaman, Nicobar, Daman, and Diu Islands together while rnaturalearthhires considers them separately as the Andaman and Nicobar Islands and the Daman and Diu Islands. For the purposes of this project, I divded the data reported by Statista in half and assigned one half each to the Andaman and Nicobar Islands and the Daman and Diu Islands.
+###### Note: Statista reports data for the Andaman, Nicobar, Daman, and Diu Islands together while rnaturalearthhires considers them separately as the Andaman and Nicobar Islands and the Daman and Diu Islands. For the purposes of this project, I divided the value reported by Statista in half and assigned one half each as the respective value for the Andaman and Nicobar Islands and the Daman and Diu Islands.
 
 ```{r load variable, message=FALSE}
 covid_india <- read_csv("assignment2.csv")
