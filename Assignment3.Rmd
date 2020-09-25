@@ -1,0 +1,37 @@
+---
+title: "Assignment3"
+author: "Nickie Mitch"
+date: "9/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries, message=FALSE}
+library(sf)
+library(tidyverse)
+library(ggthemes)
+```
+
+Sourced from the Open Indy Data Portal at https://data.indy.gov/
+```{r import council districts}
+indy_neighborhoods <- st_read("https://opendata.arcgis.com/datasets/d5b4734bed3f49f9b2109ca9a0401886_10.kml", quiet=TRUE)
+
+indy_cultural_districts <- st_read("https://opendata.arcgis.com/datasets/cee4c62348cd4dd0aadb3855bbf7692b_0.kml", quiet=TRUE)
+
+indy_parks <- st_read("https://opendata.arcgis.com/datasets/106d14dad4864c4ea3a7bc80b7f73e3f_0.kml", quiet=TRUE)
+
+indy_bus_stops <- st_read("https://opendata.arcgis.com/datasets/922ada43e0f046a1a2e0d252c0cb4945_4.kml", quiet=TRUE)
+
+indy_bike_share<- st_read("https://opendata.arcgis.com/datasets/9c096fd62b8a4c7f8335556740c8ba23_2.kml", quiet=TRUE)
+```
+
+```{r, plot neighborhoods}
+ggplot(indy_neighborhoods) +
+  geom_sf(fill = NA, color = "grey") +
+    geom_sf(data = indy_bus_stops, color = "purple", size = 0.01) +
+  geom_sf(data = indy_bike_share, size = 0.1) +
+  geom_sf(data = indy_parks, fill = "green", color = "darkgreen")
+```
