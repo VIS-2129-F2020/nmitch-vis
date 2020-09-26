@@ -13,8 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(sf)
 library(tidyverse)
 library(ggthemes)
+library(ggspatial)
+library(units)
+library(nngeo)
 ```
 
+### Load Data
 Sourced from the Open Indy Data Portal at https://data.indy.gov/
 ```{r import council districts}
 indy_neighborhoods <- st_read("https://opendata.arcgis.com/datasets/d5b4734bed3f49f9b2109ca9a0401886_10.kml", quiet=TRUE)
@@ -25,13 +29,95 @@ indy_parks <- st_read("https://opendata.arcgis.com/datasets/106d14dad4864c4ea3a7
 
 indy_bus_stops <- st_read("https://opendata.arcgis.com/datasets/922ada43e0f046a1a2e0d252c0cb4945_4.kml", quiet=TRUE)
 
-indy_bike_share<- st_read("https://opendata.arcgis.com/datasets/9c096fd62b8a4c7f8335556740c8ba23_2.kml", quiet=TRUE)
+indy_bike_share <- st_read("https://opendata.arcgis.com/datasets/9c096fd62b8a4c7f8335556740c8ba23_2.kml", quiet=TRUE)
+
 ```
 
-```{r, plot neighborhoods}
+### Transform to Indiana East Plane (NAD83)
+```{r, transform}
+Indiana_Plane <- "+proj=tmerc +lat_0=37.5 +lon_0=-85.66666666666667 +k=0.9999666666666667 +x_0=100000 +y_0=250000 +ellps=GRS80 +units=m +no_defs"
+
+indy_neighborhoods <- indy_neighborhoods %>% st_transform(Indiana_Plane)
+
+indy_cultural_districts <- indy_cultural_districts %>% st_transform(Indiana_Plane)
+
+indy_parks <- indy_parks %>% st_transform(Indiana_Plane)
+
+indy_bus_stops <- indy_bus_stops %>% st_transform(Indiana_Plane)
+
+indy_bike_share<- indy_bike_share %>% st_transform(Indiana_Plane)
+```
+
+### Plot All Variables
+```{r, plot all variables}
 ggplot(indy_neighborhoods) +
   geom_sf(fill = NA, color = "grey") +
-    geom_sf(data = indy_bus_stops, color = "purple", size = 0.01) +
-  geom_sf(data = indy_bike_share, size = 0.1) +
-  geom_sf(data = indy_parks, fill = "green", color = "darkgreen")
+    geom_sf(data = indy_bus_stops, color = "purple", size = 0.1) +
+  geom_sf(data = indy_bike_share, color= "orange", size = 0.1) +
+  geom_sf(data = indy_parks, fill = "darkgreen", color = "darkgreen") +
+  theme_map() +
+  annotation_scale()
 ```
+
+### Calculation 1
+The number and proportion of Indiana Pacers Bikeshare docks located within 80 meters (approximately one block) of an IndyGo Bus Stop.
+
+```{r, create bus buffer}
+bus_buffer <- st_buffer(indy_bus_stops, dist = 80) %>%
+  st_union()
+```
+
+```{r subset bikeshares with bus}
+bike_bus <- indy_bike_share[bus_buffer,] 
+indy_bike_share <- indy_bike_share %>%
+  st_join(bike_bus) %>%
+  mutate(by_indy_bus_stops = !is.na(Name.y))
+```
+
+```{r calculate number bikes near bus}
+n_bike_bus <- sum(indy_bike_share$by_indy_bus_stops)
+
+n_bike_bus
+```
+
+```{r calculate percent bikes near bus}
+n_bike <- length(indy_bike_share$by_indy_bus_stops)
+
+pct_bike_bus <- n_bike_bus / n_bike
+
+pct_bike_bus
+```
+
+```{r plot percent bikes near but}
+left_side  <- st_bbox(indy_bike_share)$xmin
+top_side <- st_bbox(indy_bike_share)$ymax
+
+ggplot(indy_neighborhoods) +
+  geom_sf(fill = "grey", color = NA) +
+  geom_sf(data = indy_bike_share, size = 0.75,
+          aes(color = by_indy_bus_stops)) +
+  scale_color_manual(values = c("lightgreen", "purple"),
+          name = "Bikeshare locations \nby distance to a bus stop", 
+          labels = c("No bus stop within 80 m",
+                     "Bus stop within 80 m")) +
+  annotation_scale(location = "br") +
+  annotation_north_arrow(location = "tr",
+                         style = north_arrow_minimal()) +
+  annotate(geom = "text", x = left_side, 
+           y = top_side, 
+           label = paste("Of the ", 
+                         prettyNum(n_bike, big.mark = ","),
+                         " bikeshare docks in Indianapolis\n", 
+                         prettyNum(n_bike_bus, big.mark = ","),
+                         " (", 
+                         prettyNum(100*pct_bike_bus, digits = 0),
+                         "%) are within 80\nmeters of a bus stop.",
+                         sep = ""),
+           hjust = 0, vjust = 0, size = 3) +
+  theme_map() +
+  theme(panel.background = element_rect(fill = "cornsilk1"),
+        legend.background = element_rect(fill = alpha("white", 0.5), 
+                                         color = "gray"))
+```
+
+### Calculation 2 - 
