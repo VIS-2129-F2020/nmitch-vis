@@ -20,6 +20,9 @@ library(nngeo)
 
 ### Load Data
 Sourced from the Open Indy Data Portal at https://data.indy.gov/
+
+I considered cultural districts, parks, IndyGo bus stops, and Indiana Pacers Bikeshare docks. When necessary, I used neighborhoods boundaries as a base map for my plots.
+
 ```{r import data}
 indy_neighborhoods <- st_read("https://opendata.arcgis.com/datasets/d5b4734bed3f49f9b2109ca9a0401886_10.kml", quiet=TRUE)
 
@@ -33,7 +36,8 @@ indy_bike_share <- st_read("https://opendata.arcgis.com/datasets/9c096fd62b8a4c7
 
 ```
 
-### Transform to Indiana East Plane (NAD83)
+### Transform to Indiana East Plane (NAD83) 
+The Open Indy Data Portal specified this as the proper plane for these datasets. 
 ```{r transform data}
 Indiana_Plane <- "+proj=tmerc +lat_0=37.5 +lon_0=-85.66666666666667 +k=0.9999666666666667 +x_0=100000 +y_0=250000 +ellps=GRS80 +units=m +no_defs"
 
@@ -48,7 +52,7 @@ indy_bus_stops <- indy_bus_stops %>% st_transform(Indiana_Plane)
 indy_bike_share<- indy_bike_share %>% st_transform(Indiana_Plane)
 ```
 
-### Plot All Variables
+### Rough Plot of All Variables
 ```{r plot all variables}
 ggplot(indy_neighborhoods) +
   geom_sf(fill = NA, color = "grey") +
@@ -94,7 +98,7 @@ top_side <- st_bbox(indy_bike_share)$ymax
 
 ggplot(indy_neighborhoods) +
   geom_sf(fill = "grey", color = NA) +
-  geom_sf(data = indy_bike_share, size = 0.75,
+  geom_sf(data = indy_bike_share, size = 1,
           aes(color = by_indy_bus_stops)) +
   scale_color_manual(values = c("lightgreen", "purple"),
           name = "Bikeshare locations \nby distance to a bus stop", 
@@ -104,7 +108,7 @@ ggplot(indy_neighborhoods) +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
   annotate(geom = "text", x = left_side, 
-           y = top_side, 
+           y = top_side +1000, 
            label = paste("Of the ", 
                          prettyNum(n_bike, big.mark = ","),
                          " bikeshare docks in Indianapolis\n", 
@@ -122,7 +126,7 @@ ggplot(indy_neighborhoods) +
 
 
 ### Calculation 2
-The number and proportion of IndyGo Bus Stops located within 80 meters (approximately one block) of as Indiana Pacers Bikeshare dock.
+The number and proportion of IndyGo Bus Stops located within 80 meters (approximately one block) of an Indiana Pacers Bikeshare dock.
 
 ```{r create bike buffer}
 bike_buffer <- st_buffer(indy_bike_share, dist = 80) %>%
@@ -152,13 +156,15 @@ pct_bike_bus2
 
 ```{r plot bus near bike}
 left_side  <- st_bbox(indy_bus_stops)$xmin
+right_side  <- st_bbox(indy_bus_stops)$xmax
+bottom_side <- st_bbox(indy_bus_stops)$ymin
 top_side <- st_bbox(indy_bus_stops)$ymax
 
 ggplot(indy_neighborhoods) +
-  geom_sf(fill = "grey", color = NA) +
-  geom_sf(data = indy_bus_stops, size = 0.75,
+  geom_sf(fill = NA, color = NA) +
+  geom_sf(data = indy_bus_stops, size = 1,
           aes(color = by_indy_bike_share)) +
-  scale_color_manual(values = c("red", "green"),
+  scale_color_manual(values = c("pink", "green"),
           name = "Bus stopsby distance \n to a bike share dock", 
           labels = c("No bike share dock within 80 m",
                      "Bike share dock within 80 m")) +
@@ -166,7 +172,7 @@ ggplot(indy_neighborhoods) +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
   annotate(geom = "text", x = left_side, 
-           y = top_side, 
+           y = top_side - 3000,  
            label = paste("Of the ", 
                          prettyNum(n_bike, big.mark = ","),
                          " bus stops in Indianapolis\n", 
@@ -185,7 +191,7 @@ ggplot(indy_neighborhoods) +
 ### Calculation 3
 The average distance between IndyGo Bus Stops and the nearest Indiana Pacers Bikeshare dock.
 
-```{r average distance bikes and bus}
+```{r average distance bikes and bus, results=FALSE}
 
 indy_bus_stops <- indy_bus_stops %>%
   mutate(bike_dist = st_nn(indy_bus_stops, indy_bike_share, 
@@ -206,26 +212,27 @@ bottom_side <- st_bbox(indy_bus_stops)$ymin
 
 ggplot(indy_neighborhoods) +
   geom_sf(fill = NA, color = "lightgrey") +
-  geom_sf(data = indy_bus_stops, size = 0.1,
+  geom_sf(data = indy_bus_stops, size = 1,
           aes(color = bike_dist)) +
   coord_sf(xlim = c(left_side, right_side), 
            ylim = c(bottom_side, top_side), expand = FALSE) +
   scale_color_viridis_c(name = 
-                          "IndyGo Bus Stops\nby distance to a bike share location") +
+                          "IndyGo Bus Stops\nby distance \nto a bike share location \n(in meters)") +
   annotation_scale(location = "br") +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
   annotate(geom = "text", x = left_side + 300, 
-           y = top_side - 550, 
+           y = bottom_side + 5000, 
            label = paste("On average, an IndyGo bus stop is\n ", 
                          prettyNum(avg_bike_bus_dist, digits = 3),
-                         " meters from a Indiana Pacers Bike Share dock",
+                         " meters from an Indiana Pacers\n Bike Share dock",
                          sep = ""),
            hjust = 0, vjust = 1, size = 3) +
   theme_map() +
   theme(panel.background = element_rect(fill = "cornsilk1"),
         legend.background = element_rect(fill = alpha("white", 0.5), 
-                                         color = "gray"))
+                                         color = "gray")) +
+  theme(legend.position = "left")
 ```
 
 ### Calculation 4
@@ -245,10 +252,10 @@ avg_bike_bus_dist2
 ```
 
 ```{r plot bike bus 2}
-right_side <- st_bbox(indy_bike_share)$xmax
-left_side  <- st_bbox(indy_bike_share)$xmin
-top_side <- st_bbox(indy_bike_share)$ymax
-bottom_side <- st_bbox(indy_bike_share)$ymin
+right_side <- st_bbox(indy_bus_stops)$xmax
+left_side  <- st_bbox(indy_bus_stops)$xmin
+top_side <- st_bbox(indy_bus_stops)$ymax
+bottom_side <- st_bbox(indy_bus_stops)$ymin
 
 
 ggplot(indy_neighborhoods) +
@@ -258,7 +265,7 @@ ggplot(indy_neighborhoods) +
   coord_sf(xlim = c(left_side, right_side), 
            ylim = c(bottom_side, top_side), expand = FALSE) +
   scale_color_viridis_c(name = 
-                          "IndyGo Bus Stops\nby distance to a bike share location") +
+                          "Bike share docks\n by distance to \n nearest bus stop \n(in meters)") +
   annotation_scale(location = "br") +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
@@ -309,13 +316,13 @@ ggplot(indy_neighborhoods) +
   annotation_scale(location = "br") +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
-  annotate(geom = "text", x = left_side, 
-           y = top_side - 1000, 
+  annotate(geom = "text", x = left_side -500, 
+           y = top_side + 2000, 
            label = paste(n_districts_parks ,
                          "of Indianapolis's", 
-                         length(indy_cultural_districts),
-                         "cultural district contain\nor overlap with", 
-                         "a park."),
+                         length(indy_cultural_districts),   
+                         "cultural districts", "\n(",
+                         prettyNum(100*pct_districts_parks, digits = 0),"%)", "contain or overlap \n with a park."),
            hjust = 0, vjust = 0, size = 3) +
   theme_map() +
   theme(panel.background = element_rect(fill = "gray"),
@@ -326,7 +333,7 @@ ggplot(indy_neighborhoods) +
 
 
 ### Calculation 6
-The number and proportion of parks that overlap with cultural districts
+The number and proportion of parks that contain or overlap overlap with cultural districts.
 
 ```{r cultural dist parks 2}
 indy_parks <- indy_parks %>%
@@ -362,12 +369,12 @@ ggplot(indy_neighborhoods) +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
   annotate(geom = "text", x = left_side, 
-           y = top_side - 1000, 
-           label = paste(n_districts_parks2 ,
+           y = top_side - 3000, 
+           label = paste(n_districts_parks2,
                          "of Indianapolis's", 
-                         length(indy_parks$Name),
-                         "parks contain\nor overlap with", 
-                         "a cultural district"),
+                         length(indy_parks$Name),   
+                         "parks", "\n(",
+                         prettyNum(100*pct_districts_parks2, digits = 0),"%)", "contain or overlap \n with a cultural district."),
            hjust = 0, vjust = 0, size = 3) +
   theme_map() +
   theme(panel.background = element_rect(fill = "gray"),
@@ -403,19 +410,18 @@ ggplot(indy_neighborhoods) +
   geom_sf(data = indy_cultural_districts,
           aes(fill = num_bus)) +
 scale_fill_viridis_c(name = "Indianapolis cultural districts\nby number of bus stops",
-                       breaks = breaks <- seq(0, 30, by = 10),
+                       breaks = breaks <- seq(0, 30, by = 5),
                        labels = paste(prettyNum(breaks, big.mark = ","),
                                       "stops")) +
   annotation_scale(location = "br") +
   annotation_north_arrow(location = "tr",
                          style = north_arrow_minimal()) +
   annotate(geom = "text", x = left_side, 
-           y = bottom_side - 1000, 
-           label = paste(n_districts_bus,
-                         "of Indianapolis's", 
+           y = top_side + 1000, 
+           label = paste("All of Indianapolis's \n", 
                          length(indy_cultural_districts$Name),
                          "cultural district contain \n", 
-                         "a bus stop"),
+                         "at least one bus stop"),
            hjust = 0, vjust = 0, size = 3) +
   theme_map() +
   theme(panel.background = element_rect(fill = "gray"),
@@ -451,8 +457,8 @@ ggplot(indy_neighborhoods) +
   geom_sf(fill = NA, color = "lightgrey") +
   geom_sf(data = indy_parks,
           aes(fill = num_bus)) +
-scale_fill_viridis_c(name = "Indianapolis parks\nby number of bus stops within them",
-                       breaks = breaks <- seq(0, 30, by = 10),
+scale_fill_viridis_c(name = "Indianapolis parks\nby number of bus \nstops within them",
+                       breaks = breaks <- seq(0, 10, by = 1),
                        labels = paste(prettyNum(breaks, big.mark = ","),
                                       "stops")) +
   annotation_scale(location = "br") +
@@ -463,13 +469,12 @@ scale_fill_viridis_c(name = "Indianapolis parks\nby number of bus stops within t
            label = paste(n_park_bus,
                          "of Indianapolis's", 
                          length(indy_parks$Name),
-                         "parks contain \n", 
+                         "parks (6%) \ncontain", 
                          "a bus stop"),
            hjust = 0, vjust = 0, size = 3) +
   theme_map() +
   theme(panel.background = element_rect(fill = "gray"),
         legend.background = element_rect(fill = alpha("white", 0.5), 
                                          color = "gray")) +
-  theme(legend.position = "top")
-
+  theme(legend.position = "right")
 ```
