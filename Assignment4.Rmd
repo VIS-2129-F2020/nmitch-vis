@@ -1,0 +1,122 @@
+---
+title: "Assignment 4"
+author: "Nickie Mitch"
+date: "10/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Load Libraries 
+```{r load libraries, message=FALSE}
+library(osmdata)
+library(opentripplanner)
+library(tidyverse)
+library(sf)
+library(ggthemes)
+library(ggspatial)
+```
+
+#### Load Locations 
+Sourced from Open Data DC (https://opendata.dc.gov/datasets/hospitals), this data set shows the location of all 17 hospitals in the District of Columbia.
+```{r load locations, message=FALSE}
+ DC_Hospitals<- st_read(
+  "https://opendata.arcgis.com/datasets/6c18bb76d8644bc1bf53cac2d2199564_4.kml")
+```
+
+#### Load Street Data
+```{r load street data}
+DC_plane <- "+proj=merc +lon_0=-150 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+
+opq(bbox = 'Washington DC USA') %>%
+  add_osm_feature(key = 'highway') %>%
+  osmdata_xml(file = 'OTP/graphs/default/dc_streets.osm')
+
+dc_street_features <- opq(bbox = 'Washington DC USA') %>%
+  add_osm_feature(key = 'highway') %>%
+  osmdata_sf()
+
+dc_streets <- dc_street_features$osm_lines %>%
+  st_transform(crs = DC_plane)
+
+ggplot(dc_streets) +
+  geom_sf() +
+  theme_map()
+```
+
+### Set Up Open Trip Planner
+```{r launch open trip planner}
+path_otp <- otp_dl_jar("OTP")
+path_data <- file.path(getwd(), "OTP")
+path_otp <- paste(path_data, "otp.jar",sep = "/")
+otp_build_graph(otp = path_otp, dir = path_data, memory = 1024)
+otp_setup(otp = path_otp, dir = path_data, memory =1024)
+otpcon <- otp_connect()
+```
+### Create isochrones 
+I'm interested in the area within a 10 minute walk and 10 minute drive of each of the 17 hospitals on Washington DC. 
+
+```{r create isochrones}
+iso_10min_walk <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = DC_Hospitals, 
+                mode = "WALK", cutoffSec = 600) %>%
+  st_transform(crs = DC_plane) %>%
+  mutate(mode = "walk")
+
+iso_10min_drive <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = DC_Hospitals, 
+                mode = "CAR", cutoffSec = 600) %>%
+  st_transform(crs = DC_plane) %>%
+  mutate(mode = "drive")
+
+iso_all_modes <- rbind(iso_10min_drive, iso_10min_walk)
+
+otp_stop()
+```
+
+```{r create map of isochrones}
+right_side <- st_bbox(iso_all_modes)$xmax
+left_side  <- st_bbox(iso_all_modes)$xmin
+top_side <- st_bbox(iso_all_modes)$ymax
+bottom_side <- st_bbox(iso_all_modes)$ymin
+
+ggplot(iso_all_modes) +
+  annotation_map_tile(zoomin = 0, type = "cartolight", progress = "none") +
+  geom_sf(aes(fill = mode), alpha = 0.5) +
+  geom_sf(data = DC_Hospitals) +
+  coord_sf(xlim = c(left_side, right_side), 
+           ylim = c(bottom_side, top_side), expand = FALSE) +
+  scale_fill_viridis_d(name = "Area that is reachable\nwithin 10 minutes",
+                       labels = c("By car", "By foot")) +
+  theme_map() +
+  labs(caption = "Basemap Copyright OpenStreetMap contributors")
+```  
+
+### Calcuate and compare isochrone areas
+
+### Figure 1 
+```{r calc and compare areas 1}
+iso_areas <- iso_all_modes %>%
+  mutate(area = st_area(iso_all_modes)) %>%
+  st_set_geometry(NULL) %>%
+  pivot_wider(names_from = mode, values_from = area) 
+
+ggplot(iso_areas, 
+       aes(x = as.numeric(walk), y = as.numeric(drive))) +
+  geom_point() +
+  scale_x_continuous(name = 
+            "Area within a five-minute walking distance\nof a hospital\n(square km)",
+            breaks = breaks <- seq(10000, 130000, by = 20000),
+            labels = breaks / 1000000) +
+  scale_y_continuous(name = 
+            "Area within a five-minute driving distance\nof a hospital\n(square km)",
+            breaks = breaks <- seq(0, 700000, by = 100000),
+            labels = breaks / 1000000) +
+  theme_bw()
+```
+
+### Figure 2
+
+### Figure 3
