@@ -17,6 +17,10 @@ library(tidyverse)
 library(sf)
 library(ggthemes)
 library(ggspatial)
+library(sp)
+library(stringr)
+library(rgeos)
+library(tidygeocoder)
 ```
 
 #### Load Locations 
@@ -47,7 +51,7 @@ ggplot(dc_streets) +
 ```
 
 ### Set Up Open Trip Planner
-```{r launch open trip planner}
+```{r launch open trip planner, results = 'hide'}
 path_otp <- otp_dl_jar("OTP")
 path_data <- file.path(getwd(), "OTP")
 path_otp <- paste(path_data, "otp.jar",sep = "/")
@@ -55,8 +59,9 @@ otp_build_graph(otp = path_otp, dir = path_data, memory = 1024)
 otp_setup(otp = path_otp, dir = path_data, memory =1024)
 otpcon <- otp_connect()
 ```
+
 ### Create isochrones 
-I'm interested in the area within a 10 minute walk and 10 minute drive of each of the 17 hospitals on Washington DC. 
+I'm interested in the area within a 10 minute walk and 10 minute drive of each of the 17 hospitals in Washington, DC. 
 
 ```{r create isochrones}
 iso_10min_walk <- 
@@ -73,9 +78,9 @@ iso_10min_drive <-
 
 iso_all_modes <- rbind(iso_10min_drive, iso_10min_walk)
 
-otp_stop()
 ```
 
+#### Figure 1
 ```{r create map of isochrones}
 right_side <- st_bbox(iso_all_modes)$xmax
 left_side  <- st_bbox(iso_all_modes)$xmin
@@ -96,7 +101,7 @@ ggplot(iso_all_modes) +
 
 ### Calcuate and compare isochrone areas
 
-### Figure 1 
+#### Figure 2 
 ```{r calc and compare areas 1}
 iso_areas <- iso_all_modes %>%
   mutate(area = st_area(iso_all_modes)) %>%
@@ -107,16 +112,80 @@ ggplot(iso_areas,
        aes(x = as.numeric(walk), y = as.numeric(drive))) +
   geom_point() +
   scale_x_continuous(name = 
-            "Area within a five-minute walking distance\nof a hospital\n(square km)",
-            breaks = breaks <- seq(10000, 130000, by = 20000),
+            "Area within a ten-minute walking distance\nof a hospital\n(square km)",
+            breaks = breaks <- seq(0, 2000000, by = 100000),
             labels = breaks / 1000000) +
   scale_y_continuous(name = 
-            "Area within a five-minute driving distance\nof a hospital\n(square km)",
-            breaks = breaks <- seq(0, 700000, by = 100000),
+            "Area within a ten-minute driving distance\nof a hospital\n(square km)",
+            breaks = breaks <- seq(0, 70000000, by = 2000000),
             labels = breaks / 1000000) +
   theme_bw()
 ```
 
-### Figure 2
+### Calcuating Hospital Access 
+While access to health care is a complex issue made up of many more components than simply distance to hospitals, travel time to a hospital is a key determinant of outcomes when it comes to health emergencies like strokes and cardiac arrest. To further understand disparities in health access in Washington, DC - given the substantial areas identified in my isochrone map as being more than a 10 minute walk or drive to any hospital -  I calculated a rudimentary "health score" for points across the district based on the number of hospitals within a 10 minute drive.
 
-### Figure 3
+Points derived from DC Health Planning Neighborhoods statistical boundaries found on Open Data DC. 
+
+#### Figure 3
+
+```{r import and set up nhood}
+nhoods <- st_read("https://opendata.arcgis.com/datasets/de63a68eb7674548ae0ac01867123f7e_13.kml", 
+                  quiet = TRUE) 
+nhoods1 <- as(nhoods, "Spatial")
+
+points <-spsample(nhoods1, n=1000, type='regular')
+```
+
+```{r}
+plot(points)
+```
+
+```{r make dataframe}
+points2 <- st_as_sf(x = points,                         
+           coords = coords,
+           crs = 4326)
+```
+
+```{r iso}
+iso_10min_drive3 <- 
+  otp_isochrone(otpcon = otpcon, fromPlace = points2, 
+                mode = "CAR", cutoffSec = 600)
+```
+
+```{r otp stop}
+otp_stop()
+```
+
+```{r transform 2}
+
+```
+
+```{r count hosp}
+iso_10min_drive3 <- iso_10min_drive3%>%
+  mutate(health_score = lengths(st_covers(geometry, DC_Hospitals)))
+```
+```{r out}
+
+out <- data.frame(str_split_fixed(iso_10min_drive3$fromPlace, ",", 2))
+
+out <- st_as_sf(x = out,                         
+           coords = c("X2", "X1"),
+           crs = 4326)
+  
+out$health_score <- iso_10min_drive3$health_score
+```
+
+```{r plot 3}
+ggplot(nhoods) +
+  geom_sf(fill="NA", color="grey")+
+  geom_sf(data = out, aes(color=health_score))+
+  scale_color_gradientn(name="Number of hospitals\nwithin a 10 min drive", colors=c("darkred", "yellow", "blue"))+
+  theme_map()+
+  theme(legend.position = c(.7,0),
+        plot.title = element_text(hjust = 0.5))+
+  labs(title = "Hospital Acessibility Map")
+
+```
+
+
