@@ -18,26 +18,41 @@ library(htmlwidgets)
 ```
 
 #Downloading Data - Ohio Balanced Growth Program Priority Conservation Areas in Cuyahoga County, OH
+Sourced from the Cuyahoga County Open Data Portal at https://data-cuyahoga.opendata.arcgis.com/datasets/priority-conservation-areas-ohio-balanced-growth-program
+
 ```{r download data}
 Priority_Conservation <- st_read("https://opendata.arcgis.com/datasets/71f20ffde5a14ac88db5b05390a36455_13.kml") %>%
   mutate(acres = as.numeric(st_area(geometry)) / 4046.86)%>%
   mutate(name = ifelse(is.na(Name), "unnamed", Name))
 ```
-
+#Creating Map
 ```{r leaflet map 1}
-Priority_Conservation$describe <- 
-  paste(Priority_Conservation$Name, "<br>", 
-               prettyNum(Priority_Conservation$acres, digits = 2), " acres") %>% 
+
+Priority_Conservation$size<- 
+  paste(prettyNum(Priority_Conservation$acres, digits = 2), " acres") %>% 
   lapply(htmltools::HTML)
+
+
+color_bins <- colorNumeric(palette = "Greens",
+  domain = Priority_Conservation$acres)
 
 map1 <- leaflet(Priority_Conservation) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
-  addPolygons(fillColor = "blue", stroke = FALSE, 
-              highlightOptions = highlightOptions(fillColor = "navy", 
-                                                  fillOpacity = 1), popup = ~describe) %>%
+  addPolygons(fillColor = color_bins(Priority_Conservation$acres), stroke = FALSE, 
+              highlightOptions = highlightOptions(fillColor = "green", 
+                                                  fillOpacity = 1), label = ~size) %>%
   addControl("Ohio Balanced Growth Program Priority Conservation Areas in Cuyahoga County, OH", position = "topright") %>%
 addControl('<a href="https://data-cuyahoga.opendata.arcgis.com/datasets/priority-conservation-areas-ohio-balanced-growth-program">Data source</a>',
-             position = "bottomleft")
+             position = "bottomleft") %>%
+  addLegend(pal = color_bins,
+             values = Priority_Conservation$acres,
+             title = "Acreage of Area",
+            opacity = 1)
 map1
+```
+
+# Save as Separate HTML 
+```{r save}
+saveWidget(map1, file = "priority_conservation.html")
 ```
 
