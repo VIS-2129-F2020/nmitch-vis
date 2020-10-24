@@ -1,0 +1,43 @@
+---
+title: "Assignment6-InteractiveMap"
+author: "Nickie Mitch"
+date: "10/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries, results='hide'}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(htmltools)
+library(htmlwidgets)
+```
+
+#Downloading Data - Ohio Balanced Growth Program Priority Conservation Areas in Cuyahoga County, OH
+```{r download data}
+Priority_Conservation <- st_read("https://opendata.arcgis.com/datasets/71f20ffde5a14ac88db5b05390a36455_13.kml") %>%
+  mutate(acres = as.numeric(st_area(geometry)) / 4046.86)%>%
+  mutate(name = ifelse(is.na(Name), "unnamed", Name))
+```
+
+```{r leaflet map 1}
+Priority_Conservation$describe <- 
+  paste(Priority_Conservation$Name, "<br>", 
+               prettyNum(Priority_Conservation$acres, digits = 2), " acres") %>% 
+  lapply(htmltools::HTML)
+
+map1 <- leaflet(Priority_Conservation) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(fillColor = "blue", stroke = FALSE, 
+              highlightOptions = highlightOptions(fillColor = "navy", 
+                                                  fillOpacity = 1), popup = ~describe) %>%
+  addControl("Ohio Balanced Growth Program Priority Conservation Areas in Cuyahoga County, OH", position = "topright") %>%
+addControl('<a href="https://data-cuyahoga.opendata.arcgis.com/datasets/priority-conservation-areas-ohio-balanced-growth-program">Data source</a>',
+             position = "bottomleft")
+map1
+```
+
