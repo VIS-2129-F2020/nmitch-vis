@@ -25,6 +25,41 @@ Priority_Conservation <- st_read("https://opendata.arcgis.com/datasets/71f20ffde
   mutate(acres = as.numeric(st_area(geometry)) / 4046.86)%>%
   mutate(name = ifelse(is.na(Name), "unnamed", Name))
 ```
+
+# Creating a Custom Palette 
+Instruction for how to create a custom palette from https://drsimonj.svbtle.com/creating-corporate-colour-palettes-for-ggplot2\
+Green palette hex codes from https://www.schemecolor.com/shades-of-green.php 
+
+```{r custom pallette}
+green_colors <- c(
+  `green1`      = "#ACDF87",
+  `green2`      = "#A4DE02",
+  `green3`      = "#68BB59",
+  `green4`      = "#4C9A2A",
+  `green5`      = "#1E5631")
+
+green_cols <- function(...) {
+  cols <- c(...)
+
+  if (is.null(cols))
+    return (green_colors)
+
+  green_colors[cols]}
+
+green_palette <- list(`main`  = green_cols("green1", "green2", "green3", "green4", "green5"))
+
+green_pal <- function(palette = "main", reverse = FALSE, ...) {
+  pal <- green_palette[[palette]]
+
+  if (reverse) pal <- rev(pal)
+
+  colorRampPalette(pal, ...)
+}
+
+```
+
+
+
 # Creating Map
 ```{r leaflet map 1}
 
@@ -33,7 +68,7 @@ Priority_Conservation$size<-
   lapply(htmltools::HTML)
 
 
-color_bins <- colorNumeric(palette = "Greens",
+color_bins <- colorNumeric(palette = green_pal("main")(5),
   domain = Priority_Conservation$acres)
 
 map1 <- leaflet(Priority_Conservation) %>%
