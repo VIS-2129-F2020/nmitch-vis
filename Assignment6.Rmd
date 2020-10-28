@@ -73,9 +73,8 @@ color_bins <- colorNumeric(palette = green_pal("main")(5),
 
 map1 <- leaflet(Priority_Conservation) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
-  addPolygons(fillColor = color_bins(Priority_Conservation$acres), stroke = FALSE, 
-              highlightOptions = highlightOptions(fillColor = "green", 
-                                                  fillOpacity = 1), label = ~size) %>%
+  addPolygons(fillColor = color_bins(Priority_Conservation$acres), fillOpacity = 0.75, stroke = FALSE, 
+              highlightOptions=highlightOptions(fillColor = "sandybrown", fillOpacity = 1), label = ~size) %>%
   addControl("Ohio Balanced Growth Program Priority Conservation Areas in Cuyahoga County, OH", position = "topright") %>%
 addControl('<a href="https://data-cuyahoga.opendata.arcgis.com/datasets/priority-conservation-areas-ohio-balanced-growth-program">Data source</a>',
              position = "bottomleft") %>%
