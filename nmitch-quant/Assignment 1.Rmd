@@ -1,0 +1,83 @@
+---
+title: "Assignment 1"
+author: "Nickie Mitch"
+date: "9/8/2020"
+output: html_document
+---
+# Diving into R and preparing data
+
+While I do have some experience in data analysis, R - and coding more broadly - is an entirely new world for me. This assignment is my first experience using R to access and prepare data, and then to create a deliverable. 
+
+Per the assignment instructions, I loaded the Tidyverse and developmental Tidycensus libraries, then accessed person-level, household-level, and area-level data from the 2018 American Community Survey as well as area-level data from the 2010 census.
+
+```{r load libraries, message=FALSE}
+library(tidycensus)
+library(tidyverse)
+```
+
+```{r load person-level microdata variables}
+person_vars_2018 <- pums_variables %>%
+  distinct(year, survey, var_code, 
+           var_label, data_type, level) %>%
+  filter(level == "person", year == 2018, survey == "acs1")
+```
+
+```{r load household-level microdata variables}
+hh_vars_2018 <- pums_variables %>%
+  distinct(year, survey, var_code, 
+           var_label, data_type, level) %>%
+  filter(level == "housing", year == 2018, survey == "acs1")
+```
+
+```{r load area-level ACS microdata variables}
+area_vars_2018 <- load_variables(2018, "acs1")
+```
+
+```{r load area-level census microdata variables}
+area_vars_2010 <- load_variables(2010, "sf1")
+```
+
+
+# Exploring relationships between internet access and household characteristics in Maine
+
+### Defining population and selecting variables
+
+Individuals who lack internet access face a wide spectrum of limited opportunities for economic and social connections in today's society. I choose to limit my analysis to Maine because it is a state with a high number of rural and remote communities in which internet access is a  pressing concern. Because residential internet is provided and billed by the housing unit, household-level is the best unit of analysis.
+
+The population my study considers is comprised of all households in Maine (12,506 observations). I consider characteristics of them in the context of whether or not they have internet access. I hope my analysis will develop understandings upon which further explorations of barriers to internet access can be based in the future.
+
+The categorical variables I consider are access to the internet (ACCESS) and detailed household language (HHLANP). 
+
+The continuous variables I consider are household income over the past 12 months using ADJINC to adjust to constant dollars (HINCP), number of related children in this household (NRC), and number of persons in this household (NP). 
+
+I use tenure (TEN) to filter out vacant housing units. 
+
+### Loading selected variables
+
+```{r results='hide'}
+household_data_me <- get_pums(variables = c("ACCESS",
+                                  "HHLANP", 
+                                  "HINCP",
+                                  "NRC", 
+                                  "NP",
+                                  "TEN"),
+                        state = "ME", 
+                        year = 2018, 
+                        survey = "acs1",
+                        recode = TRUE) %>%
+   filter(TEN_label != "N/A (GQ/vacant)") %>%
+select(ACCESS_label, HHLANP_label, HINCP, NRC, NP)
+```
+
+### Displaying selected variables
+
+```{r show loaded microdata variables, message=FALSE}
+household_data_me
+```
+
+### Saving selected variables
+
+```{r save data}
+write_csv(household_data_me, "household_data_me.csv")
+```
+

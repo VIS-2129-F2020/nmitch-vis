@@ -1,0 +1,247 @@
+---
+title: "Assignment 1"
+author: "Nickie Mitch"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading libraries
+
+```{r load libraries, message=FALSE}
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(wesanderson)
+```
+
+## Reviewing variables
+
+```{r view variables, message=FALSE}
+area_vars_2010 <- load_variables(2010, "sf1")
+```
+
+## Selecting and loading variables
+
+I chose to consider data from the 2010 Census for census tracts in my home county of Bartholomew County, Indiana. The continuous variables I consider are percent of households in rented homes (pct_rented), total households made up of only one person (tot_one_person_hh), the percent of housing units that are vacant (pct_vacant), and the total population of the tract (tot_pop). The categorical variables I consider are whether the tract is urban or rural (urban) and the majority gender of the tract (majority_gender). My data includes 15 observations.
+
+``` {r load variables, message=FALSE}
+vars <- c(tot_housing_units = "H001001",
+          tot_vacant = "H003003",
+          tot_one_person_hh = "P019002",
+          tot_rented = "H004004",
+          tot_urban = "H002002",
+          tot_pop = "P003001", 
+          tot_female = "P012026",
+          tot_male = "P012002")
+Barth_tracts <- get_decennial(geography = "tract", variables = vars,
+                           state = "IN", county = "Bartholomew",
+                           output = "wide") %>%
+  mutate(urban = (tot_urban == tot_housing_units) ,
+         pct_vacant = tot_vacant / tot_housing_units,
+         pct_rented = tot_rented / tot_housing_units,
+         majority_gender = case_when(
+           tot_female / tot_pop > 0.5 ~ "female",
+           tot_male / tot_pop > 0.5 ~ "male",
+           TRUE ~ "None")) %>%
+  filter(tot_pop > 0, tot_housing_units > 0) %>%
+  select(GEOID, urban, majority_gender, pct_rented, pct_vacant, tot_one_person_hh, tot_pop) 
+
+```
+
+## Displaying selected variables
+
+```{r show loaded microdata variables, message=FALSE}
+Barth_tracts
+```
+
+## Figure 1 - Scatterplot with all variables
+
+```{r generate figure 1}
+ggplot(Barth_tracts, 
+       aes(x = pct_rented,
+           y = tot_pop,
+           size = tot_one_person_hh,
+           shape = urban,
+           color = majority_gender,
+           alpha = pct_vacant )) +
+  geom_point() +
+  scale_size_continuous(name = "Total one-person households in tract") +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(0, 10000, by = 1000),
+                     labels = paste(seq(0, 10000, by = 1000), sep = "")) +
+  scale_color_discrete(name = "Majority gender",
+                       labels = c("Female",
+                       "Male")) +
+  scale_alpha_continuous(name = "Percent of housing units vacant") +
+   scale_shape(name = element_blank(), 
+              labels = c("Rural tract", "Urban tract")) +
+  theme_bw() +
+  theme(legend.key.size = unit(0.1, "cm"))
+```
+
+## Figure 2 - Bar chart with all categorical variables
+
+```{r generate figure 2}
+ggplot(Barth_tracts, aes(x = urban, fill = majority_gender)) +
+  geom_bar() +
+  scale_y_continuous(name = "Number of tracts",
+                     breaks = seq(0, 10, by = 1),) +
+  scale_x_discrete(name = "",
+                        labels = c("Rural Tracts",
+                                   "Urban Tracts")) +
+  scale_fill_discrete(name = "Majority Gender",
+                        labels = c("Female",
+                                   "Male")) +
+  theme_economist() 
+```
+
+## Figure 3 - Scatterplot with three continuous variable
+
+```{r generate figure 3}
+ggplot(Barth_tracts, 
+       aes(x = pct_vacant,
+           y = tot_pop,
+           color = tot_one_person_hh)) +
+  geom_point(size=4) +
+  scale_color_manual(values=wes_palette(n=4, name="Moonrise2")) +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  scale_color_continuous(name = "Total one-person households in tract",
+                     breaks = seq(0, 1000, by = 250)) +
+  theme_minimal()
+```
+
+## Figure 4 - Scatterplot with one continuous and one categorical variable
+
+```{r generate figure 4}
+ggplot(Barth_tracts, 
+       aes(x = pct_vacant,
+           y = urban)) +
+  geom_point() +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_discrete(name = "",
+                    labels = c("rural",
+                               "urban")) +
+  theme_wsj()
+```
+
+## Figure 5 - Scatterplot in Polar Coordinate System with Two Continuous Variables and one categorical variable
+
+```{r generate figure 5}
+ggplot(Barth_tracts, 
+       aes(x = pct_vacant,
+           y = tot_pop,
+           color = majority_gender)) +
+  geom_point() +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.01),
+                     labels = paste(seq(0, 100, by = 1), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  scale_color_discrete(name = "Majority Gender",
+                       labels = c("female", "male")) +
+  coord_polar(theta = "x") +
+  theme_bw()
+```
+
+## Figure 6 - Scatterplot with two continuous variables
+
+```{r generate figure 6}
+ggplot(Barth_tracts, 
+       aes(x = pct_rented,
+           y = tot_pop,)) +
+  geom_point(size = 4) +
+  scale_x_continuous(name = "Percent of housing units vacant",
+                     breaks = seq(0, 1, by = 0.05),
+                     labels = paste(seq(0, 100, by = 5), "%", sep = "")) +
+  scale_y_continuous(name = "Total population of tract",
+                     breaks = seq(1000, 10000, by = 1000)) +
+  theme_bw() +
+  theme(legend.key.size = unit(0.1, "cm"))
+```
+
+## Figure 7 - Box plot with two categorical variables and one continuous variable
+```{r generate figure 7}
+ggplot(Barth_tracts, 
+       aes(x = majority_gender,
+           y = tot_one_person_hh,
+           color = majority_gender)) +
+  geom_boxplot(size=1) +
+  scale_x_discrete(name = "Majority gender",
+                       labels = c("Female",
+                                  "Male")) +
+  scale_y_continuous(name = "Total one person households",
+                     breaks = seq(0, 1000, by = 100),
+                    labels = paste(seq(0, 1000, by = 100), sep = "")) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+## Figure 8 - Violin plot with two categorical variables and one continuous variable with scatter plot on top
+```{r generate figure 8}
+ggplot(Barth_tracts, 
+       aes(x = majority_gender,
+           y = tot_one_person_hh,
+           color = majority_gender)) +
+  geom_violin() +
+  geom_point(position="jitter",
+             alpha =0.5,
+             size =2) +
+  scale_x_discrete(name = "Majority gender",
+                       labels = c("Female",
+                                  "Male")) +
+  scale_y_continuous(name = "Total one person households",
+                     breaks = seq(0, 1000, by = 100),
+                    labels = paste(seq(0, 1000, by = 100), sep = "")) +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+## Figure 9 - Pie chart with one categorical variable
+```{r, generate figure 9}
+pie_chart <- ggplot(Barth_tracts, aes(x = 1, fill = urban )) +
+  geom_bar(position = "fill") +
+  coord_polar(theta = "y") +
+  scale_y_continuous(name = "Number of tracts") +
+  scale_fill_discrete(name = "",
+                       labels = c("Rural Tracts", 
+                                  "Urban Tracts")) +
+  theme_void()  
+
+pie_chart
+```
+
+## Figure 10 - Scatterplot with two continuous variables and one categorical variable with a trendline
+```{r generate figure 10}
+ggplot(Barth_tracts, 
+       aes(x = pct_rented,
+           y = tot_one_person_hh,
+           color = majority_gender)) +
+  geom_point() +
+  stat_smooth(method = "lm") +
+  scale_x_continuous(name = "Percent of households in rented homes",
+                     breaks = seq(0, 1, by = 0.1),
+                     labels = paste(seq(0, 100, by = 10), "%", sep = "")) +
+  scale_y_continuous(name = "Total one person households",
+                     breaks = seq(0, 1000, by = 100)) +
+  scale_color_discrete(name = "Majority Gender",
+                       labels = c("Female", "Male")) +
+  theme_economist()
+```
+
+## Reflections
+It was interesting to explore the different ways that R and its various packages can be used to present data. The various styles were especially fun. If I were to do this over again, I would choose a geography that included more census tracts; a greater number of observations would allow for more thorough exploration of the features and challenges R. With this project, as well as the projects for Quant, I continue to feel more comfortable using R. 
+

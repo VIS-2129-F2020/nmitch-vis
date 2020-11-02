@@ -1,0 +1,512 @@
+---
+title: "Assignment 2"
+author: "Nickie Mitch"
+date: "9/16/2020"
+output: html_document
+---
+
+## Load libraries
+
+```{r load libaries, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library (ggthemes)
+```
+
+## Load Household-level Data
+```{r load hh data, message=FALSE}
+hh_data <- read_csv("household_data_me.csv")
+attach(hh_data)
+```
+
+## Distribution of household income over the past 12 months (HINCP)
+
+This is a continuous variable.
+
+### Mean
+
+```{r HINCP mean, message=FALSE}
+paste("The sample mean for household income over the last 12 months is",
+      prettyNum(mean(HINCP)), "dollars in USD, using ADJINC to adjust to constant dollars.")
+```
+### Median
+
+```{r HINCP median, message=FALSE}
+paste("The sample median for household income over the last 12 months is",
+      prettyNum(median(HINCP)), "dollars in USD, using ADJINC to adjust to constant dollars.")
+```
+
+### Standard Deviation
+```{r HINCP standard deviation, message=FALSE}
+paste("The sample standard deviation for household income over the last 12 months is",
+      prettyNum(sd(HINCP)), "dollars in USD, using ADJINC to adjust to constant dollars.")
+```
+
+### Interquartile Range 
+```{r HINCP interquartile range, message=FALSE}
+paste("The sample interquartile range for household income over the last 12 months is",
+      quantile(HINCP)["25%"], "to", quantile(HINCP)["75%"], "dollars in USD, using ADJINC to adjust to constant dollars.")
+```
+
+### 95% Confidence Interval
+```{r HINCP T-Test, message=FALSE}
+pop_mean_HINCP <- t.test(HINCP)
+pop_mean_HINCP
+```
+
+```{r HINCP 95 confidence interval, message=FALSE}
+paste("The 95-percent confidence interval for the population mean for household income over the last 12 months is",
+       prettyNum(pop_mean_HINCP$conf.int[1]), "to", prettyNum(pop_mean_HINCP$conf.int[2]), "dollars in USD, using ADJINC to adjust to constant dollars.")
+```
+### Histogram
+```{r fancy histogram HINCP, message=FALSE}
+ggplot(hh_data, aes(x = HINCP)) +
+  geom_histogram() +
+  theme_economist() +
+  scale_x_continuous(name = "Household income over the last 12 months") +
+  scale_y_continuous(name = "Number of households in sample") + 
+  annotate("text", x = 700000, y = 5000, size = 3, 
+           label = paste("Population mean (95% confidence):",
+                         prettyNum(pop_mean_HINCP$conf.int[1]),
+                         "to",
+                         prettyNum(pop_mean_HINCP$conf.int[2]),
+                         "dollars.",
+                         "\nSample mean:", 
+                         prettyNum(mean(HINCP)), "dollars",
+                         "\nSample median:",
+                         prettyNum(median(HINCP)), "dollars",
+                         "\nSample standard deviation:",
+                         prettyNum(sd(HINCP)), "dollars", 
+                         "\nSample interquartile range:",
+                         prettyNum(quantile(HINCP)["25%"]),
+                         "to",
+                         prettyNum(quantile(HINCP)["75%"]),
+                         "dollars"),
+           hjust = 1, vjust = 1) 
+```
+
+## Distribution of number of related children in this household (NRC)
+
+This is a continuous variable.
+
+### Mean
+
+```{r NRC mean, message=FALSE}
+paste("The sample mean for number of related children in this household is",
+      prettyNum(mean(NRC)), "children.")
+```
+### Median
+
+```{r NRC median, message=FALSE}
+paste("The sample median for number of related children in this household is",
+      prettyNum(median(NRC)), "children.")
+```
+
+### Standard Deviation
+```{r NRC standard deviation, message=FALSE}
+paste("The sample standard deviation for number of related children in this household is",
+      prettyNum(sd(NRC)), "children.")
+```
+
+### Interquartile Range 
+```{r NRC interquartile range, message=FALSE}
+paste("The sample interquartile range for number of related children in this household is",
+      quantile(NRC)["25%"], "to", quantile(NRC)["75%"], "children.")
+```
+
+### 95% Confidence Interval
+```{r NRC T-Test, message=FALSE}
+pop_mean_NRC <- t.test(NRC)
+pop_mean_NRC
+```
+
+```{r NRC 95 confidence interval, message=FALSE}
+paste("The 95-percent confidence interval for the population mean for number of related children in this household is",
+       prettyNum(pop_mean_NRC$conf.int[1]), "to", prettyNum(pop_mean_NRC$conf.int[2]), "children.")
+```
+
+### Histogram
+```{r fancy histogram NRC, message=FALSE}
+ggplot(hh_data, aes(x = NRC)) +
+  geom_histogram() +
+  theme_economist() +
+  scale_x_continuous(name = "Number of related chidlren in a household") +
+  scale_y_continuous(name = "Number of households in sample") + 
+  annotate("text", x = 8, y = 5000, size = 3, 
+           label = paste("Population mean (95% confidence):",
+                         prettyNum(pop_mean_NRC$conf.int[1]),
+                         "to",
+                         prettyNum(pop_mean_NRC$conf.int[2]),
+                         "children",
+                         "\nSample mean:", 
+                         prettyNum(mean(NRC)), "children",
+                         "\nSample median:",
+                         prettyNum(median(NRC)), "children",
+                         "\nSample standard deviation:",
+                         prettyNum(sd(NRC)), "children", 
+                         "\nSample interquartile range:",
+                         prettyNum(quantile(NRC)["25%"]),
+                         "to",
+                         prettyNum(quantile(NRC)["75%"]),
+                         "children"),
+           hjust = 1, vjust = 1) 
+```
+
+
+
+
+## Distribution of number of persons in this household (NP)
+This is a continuous variable.
+
+### Mean
+
+```{r NP mean, message=FALSE}
+paste("The sample mean for number of persons in a household is",
+      prettyNum(mean(NP)), "people.")
+```
+### Median
+
+```{r NP median, message=FALSE}
+paste("The sample median for number of persons in a household is",
+      prettyNum(median(NP)), "people.")
+```
+
+### Standard Deviation
+```{r NP standard deviation, message=FALSE}
+paste("The sample standard deviation for number of persons in a household is",
+      prettyNum(sd(NP)), "people.")
+```
+
+### Interquartile Range 
+```{r NP interquartile range, message=FALSE}
+paste("The sample interquartile range for number of persons in a household is",
+      quantile(NP)["25%"], "to", quantile(NP)["75%"], "people.")
+```
+
+### 95% Confidence Interval
+```{r NP T-Test, message=FALSE}
+pop_mean_NP <- t.test(NP)
+pop_mean_NP
+```
+
+```{r NP 95 confidence interval, message=FALSE}
+paste("The 95-percent confidence interval for the population mean for number of persons in a household is",
+       prettyNum(pop_mean_NP$conf.int[1]), "to", prettyNum(pop_mean_NP$conf.int[2]), "people.")
+```
+
+### Histogram
+```{r fancy histogram NP, message=FALSE}
+ggplot(hh_data, aes(x = NP)) +
+  geom_histogram() +
+  theme_economist() +
+  scale_x_continuous(name = "Number of persons in a household") +
+  scale_y_continuous(name = "Number of households in sample") + 
+  annotate("text", x = 10, y = 5000, size = 3, 
+           label = paste("Population mean (95% confidence):",
+                         prettyNum(pop_mean_NP$conf.int[1]),
+                         "to",
+                         prettyNum(pop_mean_NP$conf.int[2]),
+                         "people",
+                         "\nSample mean:", 
+                         prettyNum(mean(NP)), "people",
+                         "\nSample median:",
+                         prettyNum(median(NP)), "people",
+                         "\nSample standard deviation:",
+                         prettyNum(sd(NP)), "people", 
+                         "\nSample interquartile range:",
+                         prettyNum(quantile(NP)["25%"]),
+                         "to",
+                         prettyNum(quantile(NP)["75%"]),
+                         "people"),
+           hjust = 1, vjust = 1) 
+```
+
+
+
+## Proportions of internet access (ACCESS) 
+
+This is a categorical variable.
+
+### List all possible values
+```{r list values ACCESS, message=FALSE}
+access <- unique(hh_data$ACCESS_label)
+access
+```
+
+### Proportion and confidence intervals for each value
+```{r number proportions and conf ACCESS, message=FALSE}
+Yes_1 <- t.test(ACCESS_label == access[1])
+No <- t.test(ACCESS_label == access[2])
+Yes_2 <- t.test(ACCESS_label == access[3])
+shares <- tibble(access = c("Yes, by paying a cell phone company or Internet service provider", 
+                            "No access to the Internet at this house, apartment, or mobile home", 
+                            "Yes, without paying a cell phone company or Internet service provider"),
+                 `Share` = c(Yes_1$estimate, 
+                             No$estimate, 
+                             Yes_2$estimate),
+                 Low = c(Yes_1$conf.int[1], 
+                             No$conf.int[1], 
+                             Yes_2$conf.int[1]),
+                 High = c(Yes_1$conf.int[2], 
+                             No$conf.int[2], 
+                             Yes_2$conf.int[2]))
+knitr::kable(shares, caption = "Proportions and 95-percent confidence intervals")
+```
+
+### Bar Chart
+```{r bar chart ACCESS, message=FALSE}
+ggplot(shares, aes(x = access, y = Share, ymin = Low, ymax = High)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(width = 0.5) +
+  theme_bw() +
+  scale_x_discrete(labels = c("No access to the Internet", 
+                              "Yes, by paying ...",
+                            "Yes, wihtout paying...")) +
+  scale_y_continuous(name = "Share of population (error bars represent\n 95-percent confidence interval)",
+                     breaks = c(0, 0.2, 0.4, 0.6, 0.8),
+                     labels = c("0", "20%", "40%", "60%", "80%"))
+```
+
+## Proportions of detailed household language (HHLANP)
+
+This is a categorical variable.
+
+### List all possible values
+```{r list values HHLANP, message=FALSE}
+language <- unique(hh_data$HHLANP_label)
+language
+```
+
+### Proportion and confidence intervals for each value
+```{r number proportions and conf HHLANP, message=FALSE}
+English_only <- t.test(HHLANP_label == language[1])
+French <- t.test(HHLANP_label == language[2])
+Japanese <- t.test(HHLANP_label == language[3])
+Spanish <- t.test(HHLANP_label == language[4])
+Korean  <- t.test(HHLANP_label == language[5])
+German <- t.test(HHLANP_label == language[6])
+Other_Native_North_American_Langauges <- t.test(HHLANP_label == language[7])
+Arabic <- t.test(HHLANP_label == language[8])
+Thai <- t.test(HHLANP_label == language[9])
+Italian <- t.test(HHLANP_label == language[10])
+Chinese <- t.test(HHLANP_label == language[11])
+Pennsylvania_German <- t.test(HHLANP_label == language[12])
+Urdu <- t.test(HHLANP_label == language[13])
+Cebuano <- t.test(HHLANP_label == language[14])
+Tagalog <- t.test(HHLANP_label == language[15])
+Romanian <- t.test(HHLANP_label == language[16])
+Other_Bantu_Languages <- t.test(HHLANP_label == language[17])
+Bosnian <- t.test(HHLANP_label == language[18])
+Hindi <- t.test(HHLANP_label == language[19])
+Portuguese <- t.test(HHLANP_label == language[20])
+Mandarin <- t.test(HHLANP_label == language[21])
+Cantonese <- t.test(HHLANP_label == language[22])
+Greek <- t.test(HHLANP_label == language[23])
+Polish <- t.test(HHLANP_label == language[24])
+Filipino <- t.test(HHLANP_label == language[25])
+Bengali <- t.test(HHLANP_label == language[26])
+Somali <- t.test(HHLANP_label == language[27])
+Serbian <- t.test(HHLANP_label == language[28])
+Russian <- t.test(HHLANP_label == language[29])
+Vietnamese <- t.test(HHLANP_label == language[30])
+Luthuanian <- t.test(HHLANP_label == language[31])
+Farsi <- t.test(HHLANP_label == language[32])
+Chamorro <- t.test(HHLANP_label == language[33])
+Turkish <- t.test(HHLANP_label == language[34])
+Tamil <- t.test(HHLANP_label == language[35])
+Finnish <- t.test(HHLANP_label == language[36])
+Telugu <- t.test(HHLANP_label == language[37])
+Swahili <- t.test(HHLANP_label == language[38])
+              shares <- tibble(language = c("English only household",
+"French",
+"Japanese",
+"Spanish",
+"Korean",
+"German",
+"Other Native North American languages",
+"Arabic",
+"Thai",
+"Italian",
+"Chinese",
+"Pennsylvania German",
+"Urdu",
+"Cebuano",
+"Tagalog",
+"Romanian",
+"Other Bantu Languages",
+"Bosnian",
+"Hindi",
+"Portuguese",
+"Mandarin",
+"Cantonese",
+"Filipino",
+"Bengali",
+"Somali",
+"Serbian",
+"Russian",
+"Vietnamese", 
+"Luthuanian", 
+"Farsi", 
+"Chamorro", 
+"Turkish", 
+"Tamil",
+"Finnish",
+"Telugu",
+"Swahili"),
+                 `Share` = c(English_only$estimate,
+French$estimate,
+Japanese$estimate,
+Spanish$estimate,
+Korean$estimate,
+German$estimate,
+Other_Native_North_American_Langauges$estimate,
+Arabic$estimate,
+Thai$estimate,
+Italian$estimate,
+Chinese$estimate,
+Pennsylvania_German$estimate,
+Urdu$estimate,
+Cebuano$estimate,
+Tagalog$estimate,
+Romanian$estimate,
+Other_Bantu_Languages$estimate,
+Bosnian$estimate,
+Hindi$estimate,
+Portuguese$estimate,
+Mandarin$estimate,
+Cantonese$estimate,
+Filipino$estimate,
+Bengali$estimate,
+Somali$estimate,
+Serbian$estimate,
+Russian$estimate,
+Vietnamese$estimate, 
+Luthuanian$estimate, 
+Farsi$estimate,
+Chamorro$estimate, 
+Turkish$estimate, 
+Tamil$estimate,
+Finnish$estimate,
+Telugu$estimate,
+Swahili$estimate),
+                 Low = c(English_only$conf.int[1],
+French$conf.int[1],
+Japanese$conf.int[1],
+Spanish$conf.int[1],
+Korean$conf.int[1],
+German$conf.int[1],
+Other_Native_North_American_Langauges$conf.int[1],
+Arabic$conf.int[1],
+Thai$conf.int[1],
+Italian$conf.int[1],
+Chinese$conf.int[1],
+Pennsylvania_German$conf.int[1],
+Urdu$conf.int[1],
+Cebuano$conf.int[1],
+Tagalog$conf.int[1],
+Romanian$conf.int[1],
+Other_Bantu_Languages$conf.int[1],
+Bosnian$conf.int[1],
+Hindi$conf.int[1],
+Portuguese$conf.int[1],
+Mandarin$conf.int[1],
+Cantonese$conf.int[1],
+Filipino$conf.int[1],
+Bengali$conf.int[1],
+Somali$conf.int[1],
+Serbian$conf.int[1],
+Russian$conf.int[1],
+Vietnamese$conf.int[1], 
+Luthuanian$conf.int[1], 
+Farsi$conf.int[1], 
+Chamorro$conf.int[1], 
+Turkish$conf.int[1], 
+Tamil$conf.int[1],
+Finnish$conf.int[1],
+Telugu$conf.int[1],
+Swahili$conf.int[1]),
+                 High = c(English_only$conf.int[2], 
+French$conf.int[2],
+Japanese$conf.int[2],
+Spanish$conf.int[2],
+Korean$conf.int[2],
+German$conf.int[2],
+Other_Native_North_American_Langauges$conf.int[2],
+Arabic$conf.int[2],
+Thai$conf.int[2],
+Italian$conf.int[2],
+Chinese$conf.int[2],
+Pennsylvania_German$conf.int[2],
+Urdu$conf.int[2],
+Cebuano$conf.int[2],
+Tagalog$conf.int[2],
+Romanian$conf.int[2],
+Other_Bantu_Languages$conf.int[2],
+Bosnian$conf.int[2],
+Hindi$conf.int[2],
+Portuguese$conf.int[2],
+Mandarin$conf.int[2],
+Cantonese$conf.int[2],
+Filipino$conf.int[2],
+Bengali$conf.int[2],
+Somali$conf.int[2],
+Serbian$conf.int[2],
+Russian$conf.int[2],
+Vietnamese$conf.int[2], 
+Luthuanian$conf.int[2], 
+Farsi$conf.int[2], 
+Chamorro$conf.int[2], 
+Turkish$conf.int[2], 
+Tamil$conf.int[2],
+Finnish$conf.int[2],
+Telugu$conf.int[2],
+Swahili$conf.int[2]))
+knitr::kable(shares, caption = "Proportions and 95-percent confidence intervals")
+```
+
+### Bar Chart
+```{r bar chart language, message=FALSE}
+ggplot(shares, aes(y = language, x = Share, xmin = Low, xmax = High)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(width = 0.5) +
+  theme_bw()+
+  scale_y_discrete(labels = c("Pennsylvania German",
+"Arabic",
+"Japanese",
+"Vietnamese",
+"Korean",
+"German",
+"Other Native North American languages",
+"English only household",
+"Thai",
+"Italian",
+"Chinese",
+"French",
+"Urdu",
+"Cebuano",
+"Tagalog",
+"Romanian",
+"Other Bantu Languages",
+"Bosnian",
+"Hindi",
+"Portuguese",
+"Mandarin",
+"Cantonese",
+"Filipino",
+"Bengali",
+"Somali",
+"Serbian",
+"Russian",
+"Spanish", 
+"Luthuanian", 
+"Farsi", 
+"Chamorro", 
+"Turkish", 
+"Tamil",
+"Finnish",
+"Telugu",
+"Swahili")) +
+  scale_x_continuous(name = "Share of population (error bars represent\n 95-percent confidence interval)",
+                     breaks = c(0, 0.2, 0.4, 0.6, 0.8),
+                     labels = c("0", "20%", "40%", "60%", "80%"))
+```

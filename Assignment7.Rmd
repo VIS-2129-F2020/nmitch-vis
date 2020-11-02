@@ -1,0 +1,68 @@
+---
+title: "Assignment 7"
+author: "Nickie Mitch"
+date: "11/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(htmltools)
+library(htmlwidgets)
+library(raster)
+library(gstat)
+library(spatial)
+library(viridis)
+```
+
+```{r load map}
+dc_nhoods <- st_read("https://opendata.arcgis.com/datasets/de63a68eb7674548ae0ac01867123f7e_13.kml", quiet = TRUE)%>%
+  dplyr::select(Name)
+
+dc_covid <- st_read("C:\\Users\\nicki\\OneDrive\\Documents\\Programs\\GitHub\\nmitch-vis\\COVID_DC.csv", quiet = TRUE) %>%
+  mutate(Total2 = as.numeric (Total))
+
+
+leaflet(dc_nhoods) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(highlightOptions = highlightOptions(fillColor = "yellow", 
+                                                  fillOpacity = 1),
+              label = ~Name, 
+              weight = 1) 
+```
+
+```{r merge data}
+merged_dc <- left_join(dc_nhoods, dc_covid, by = "Name", copy = FALSE)
+```
+
+```{r load map}
+
+merged_dc$label <- 
+  paste(merged_dc$Name, "<br>", 
+        merged_dc$Total2, " cases") %>% 
+  lapply(htmltools::HTML)
+
+bins <- seq(min(merged_dc$Total2),
+            max(merged_dc$Total2), by = 5)
+pal <- colorNumeric(palette = "viridis", 
+                    domain = merged_dc$Total2)
+
+leaflet(merged_dc) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addPolygons(highlightOptions = highlightOptions(fillOpacity = 1),
+              label = ~label,
+              fillColor = ~pal(Total2),
+              weight = 1, color = "black") %>% 
+  addLegend(pal = pal, 
+            values = ~Total2,
+            bins = 3,
+            opacity = 0.7, title = "Cases",
+            position = "topright")
+```
+

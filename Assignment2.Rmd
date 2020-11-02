@@ -1,0 +1,141 @@
+---
+title: "Assignment 2"
+author: "Nickie Mitch"
+date: "9/18/2020"
+output: html_document
+---
+
+#### Load Libraries 
+```{r load libraries, message=FALSE}
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rnaturalearthhires)
+library(tidyverse)
+library(ggspatial)
+library(cartogram)
+library(ggthemes)
+```
+
+# Part 1 
+
+### Equirectangular Large Area Map - India with States
+```{r, India map}
+india_states <- ne_states(country = "India", returnclass = "sf")
+
+india_map <- ggplot(india_states) +
+  geom_sf() +
+  theme_bw()
+
+india_map
+```
+
+### Load Reprojection Coordinate Reference Systems 
+```{r load coordinate reference systems}
+#Indian 1960 / UTM zone 48N
+India_UTM48N <- "+proj=utm +zone=48 +a=6377276.345 +b=6356075.41314024 +units=m +no_defs"
+#Oblique Mercator
+India_OM <- "+proj=omerc +lonc=0 +alpha=90 +ellps=GRS80"
+#Kalyanpur IIB Everest 1956
+India_Alaska <- "+proj=tmerc +lat_0=54 +lon_0=-158 +k=0.9999 +x_0=152400.3048006096 +y_0=0 +ellps=clrk66 +datum=NAD27 +to_meter=0.3048006096012192 +no_defs" 
+```
+
+### Reprojection 1 - Indian 1960 / UTM zone 48N 
+###### Source: SpatialReference.org
+```{r reprojection 1}
+ggplot(india_states) +
+  geom_sf() +
+  coord_sf(crs = India_UTM48N) +
+  theme_bw()
+```
+
+### Reprojection 2 - Oblique Mercator
+###### Source: Proj.org
+```{r reprojection 2}
+ggplot(india_states) +
+  geom_sf() +
+  coord_sf(crs = India_OM) +
+  theme_bw()
+```
+
+### Reprojection 3 - NAD27 / Alaska Zone 5
+###### Source: SpatialReference.org
+```{r reprojection 3}
+ggplot(india_states) +
+  geom_sf() +
+  coord_sf(crs = India_Alaska) +
+  theme_bw()
+```
+
+# Part 2 
+
+### Transform Coordinate System to UTM Zone 48N for Displaying Variable
+```{r transform}
+states_transformed <- india_states %>%
+  st_transform(crs = India_UTM48N)
+```
+
+## Load Variable - Active COVID-19 Cases as of 9/18/2020
+###### Source: https://www.statista.com/statistics/1103458/india-novel-coronavirus-covid-19-cases-by-state/ (manually converted to .csv)
+###### Note: Statista reports data for the Andaman, Nicobar, Daman, and Diu Islands together while rnaturalearthhires considers them separately as the Andaman and Nicobar Islands and the Daman and Diu Islands. For the purposes of this project, I divided the value reported by Statista in half and assigned one half each as the respective value for the Andaman and Nicobar Islands and the Daman and Diu Islands.
+
+```{r load variable, message=FALSE}
+covid_india <- read_csv("assignment2.csv")
+covid_states <-states_transformed %>%
+  left_join(covid_india, by = c("name" = "State")) %>%
+  select(name, spop, Active_Cases)
+covid_states
+```
+
+## Chloropleth Map 
+```{r chlorpleth map}
+ggplot(covid_states, aes(fill = Active_Cases)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(option = "plasma",
+    name = "Number of\nactive confirmed\nCOVID-19\ncases as of\nSeptember 18, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())+
+  theme(legend.position = "left")
+```
+
+## Non-continuous Cartogram
+```{r cartogram}
+covid_cartogram_ncont <- covid_states %>%
+  cartogram_ncont("spop")
+
+ggplot(covid_cartogram_ncont, aes(fill = Active_Cases)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(
+    name = "Number of\nactive confirmed\nCOVID-19\ncases as of\nSeptember 18, 2020",
+    breaks = seq(100000, 500000, by = 100000),
+    labels = formatC(seq(100000, 500000, by = 100000), 
+                     big.mark = ",", format = "f", digits = 0)) +
+  theme_map() +
+  theme(legend.background = element_blank())+
+  theme(legend.position = "left")
+```
+
+
+## Proportional Symbol Map
+```{r proportional symbol map, warning=FALSE}
+covid_centeroids <- covid_states %>%
+  st_centroid()
+
+ggplot(states_transformed) +
+  geom_sf(fill=NA, color= "forest green") +
+  geom_sf(data = covid_centeroids, 
+          aes(size = Active_Cases),
+          alpha = 0.5, color = "orange") +
+scale_size_continuous(name = "Number of active confirmed\nCOVID-19 cases as of\nSeptember 18, 2020",
+    breaks = seq(5000, 500000, by = 75000),
+    labels = formatC(seq(5000, 500000, by = 75000), 
+                     big.mark = ",", format = "f", digits = 0),
+    range = c(0, 20)) +
+  theme_void()+ 
+  theme(legend.position = "top")
+```
+
