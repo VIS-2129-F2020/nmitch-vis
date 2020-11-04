@@ -66,3 +66,58 @@ leaflet(merged_dc) %>%
             position = "topright")
 ```
 
+```{r data as points}
+
+MD_state_plane <- "+proj=lcc +lat_1=38.3 +lat_2=39.45 +lat_0=37.66666666666666 +lon_0=-77 +x_0=399999.9999999999 +y_0=0 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs  "
+
+WGS84 <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+nhood_points <- st_centroid(
+  st_transform(merged_dc, crs = MD_state_plane)) %>%
+  st_transform(WGS84)
+
+leaflet(nhood_points) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addCircles(label = ~label,
+             fillColor = ~pal(Total2),
+             stroke = FALSE, 
+             radius = 200, 
+             fillOpacity = 1) %>% 
+  addLegend(pal = pal, 
+            values = ~Total2,
+            bins = 3,
+            opacity = 0.7, title = "Cases",
+            position = "topright")
+```
+
+
+
+```{r interpolation}
+nhood_pts_sp <- nhood_points %>%
+  st_transform(MD_state_plane) %>%
+  as_Spatial()
+
+nhood_poly_sp <- dc_nhoods %>%
+  st_transform(MD_state_plane) %>%
+  as_Spatial()
+
+DC_raster <- raster(nhood_poly_sp, res=30)
+
+gs <- gstat(formula=Total2~1, locations=nhood_pts_sp)
+idw_interp <- interpolate(DC_raster, gs)
+
+idw_interp_clip <- mask(idw_interp, nhood_poly_sp)
+```
+```{r leaflet raster}
+leaflet(nhood_points) %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addRasterImage(idw_interp_clip, colors = pal, opacity = 0.8) %>% 
+  addLegend(pal = pal, 
+            values = ~Total2,
+            bins = 3,
+            opacity = 0.7, title = "Total confirmed cases",
+            position = "topright")
+
+```
+
+
