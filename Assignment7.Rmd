@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r load libraries}
+```{r load libraries, include=FALSE}
 library(tidyverse)
 library(sf)
 library(leaflet)
@@ -19,9 +19,10 @@ library(raster)
 library(gstat)
 library(spatial)
 library(viridis)
+library(ggplot2)
 ```
 
-```{r load map}
+```{r load map, include=FALSE}
 dc_nhoods <- st_read("https://opendata.arcgis.com/datasets/de63a68eb7674548ae0ac01867123f7e_13.kml", quiet = TRUE)%>%
   dplyr::select(Name)
 
@@ -37,11 +38,13 @@ leaflet(dc_nhoods) %>%
               weight = 1) 
 ```
 
-```{r merge data}
+```{r merge data, include=FALSE}
 merged_dc <- left_join(dc_nhoods, dc_covid, by = "Name", copy = FALSE)
 ```
 
-```{r load map}
+
+# Choropleth  Map
+```{r load map 2, include=FALSE}
 
 merged_dc$label <- 
   paste(merged_dc$Name, "<br>", 
@@ -51,22 +54,31 @@ merged_dc$label <-
 bins <- seq(min(merged_dc$Total2),
             max(merged_dc$Total2), by = 5)
 pal <- colorNumeric(palette = "viridis", 
-                    domain = merged_dc$Total2)
+                    domain = merged_dc$Total2, 
+                    na.color = "#00000000")
 
-leaflet(merged_dc) %>%
+choropleth <- leaflet(merged_dc) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
   addPolygons(highlightOptions = highlightOptions(fillOpacity = 1),
               label = ~label,
               fillColor = ~pal(Total2),
               weight = 1, color = "black") %>% 
+  addControl("COVID-19 Cases by DC Health Planning Neighborhood on 8/22/2020", position = "topright") %>%
+addControl('<a href="https://opendata.dc.gov/datasets/dc-covid-19-total-positive-cases-by-neighborhood/data">Data source</a>', position = "bottomleft") %>%
   addLegend(pal = pal, 
             values = ~Total2,
-            bins = 3,
-            opacity = 0.7, title = "Cases",
+            bins = 10,
+            opacity = 0.7, title = "Total confirmed cases",
             position = "topright")
+
+```
+```{r Choropleth}
+choropleth 
 ```
 
-```{r data as points}
+# Point Map
+
+```{r data as points, include=FALSE}
 
 MD_state_plane <- "+proj=lcc +lat_1=38.3 +lat_2=39.45 +lat_0=37.66666666666666 +lon_0=-77 +x_0=399999.9999999999 +y_0=0 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs  "
 
@@ -76,23 +88,27 @@ nhood_points <- st_centroid(
   st_transform(merged_dc, crs = MD_state_plane)) %>%
   st_transform(WGS84)
 
-leaflet(nhood_points) %>%
+points <- leaflet(nhood_points) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
   addCircles(label = ~label,
              fillColor = ~pal(Total2),
              stroke = FALSE, 
              radius = 200, 
              fillOpacity = 1) %>% 
+  addControl("COVID-19 Cases by DC Health Planning Neighborhood on 8/22/2020", position = "topright") %>%
+addControl('<a href="https://opendata.dc.gov/datasets/dc-covid-19-total-positive-cases-by-neighborhood/data">Data source</a>', position = "bottomleft") %>%
   addLegend(pal = pal, 
             values = ~Total2,
-            bins = 3,
-            opacity = 0.7, title = "Cases",
+            bins = 10,
+            opacity = 0.7, title = "Total confirmed cases",
             position = "topright")
+
+```
+```{r points}
+points
 ```
 
-
-
-```{r interpolation}
+```{r interpolation, include=FALSE}
 nhood_pts_sp <- nhood_points %>%
   st_transform(MD_state_plane) %>%
   as_Spatial()
@@ -101,23 +117,39 @@ nhood_poly_sp <- dc_nhoods %>%
   st_transform(MD_state_plane) %>%
   as_Spatial()
 
-DC_raster <- raster(nhood_poly_sp, res=30)
+DC_raster <- raster(nhood_poly_sp, res=50)
 
 gs <- gstat(formula=Total2~1, locations=nhood_pts_sp)
 idw_interp <- interpolate(DC_raster, gs)
 
 idw_interp_clip <- mask(idw_interp, nhood_poly_sp)
 ```
-```{r leaflet raster}
-leaflet(nhood_points) %>%
+
+# Continuous Surface Map
+
+```{r leaflet raster, include=FALSE}
+interpolation <- leaflet(nhood_points) %>%
   addProviderTiles(providers$Stamen.TonerLite) %>%
   addRasterImage(idw_interp_clip, colors = pal, opacity = 0.8) %>% 
+  addControl("COVID-19 Cases by DC Health Planning Neighborhood on 8/22/2020", position = "topright") %>%
+addControl('<a href="https://opendata.dc.gov/datasets/dc-covid-19-total-positive-cases-by-neighborhood/data">Data source</a>', position = "bottomleft") %>%
   addLegend(pal = pal, 
             values = ~Total2,
-            bins = 3,
+            bins = 10,
             opacity = 0.7, title = "Total confirmed cases",
             position = "topright")
 
 ```
 
+```{r interpolation2}
+interpolation
+```
 
+# Discussion 
+Washington, DC has an excellent city-level data portal, including very intentionally presented data on health. To facilitate this, they have developed consistent "health planning neighborhoods" that they use to report data on a variety of health measures. The boundaries of these "health planning neighborhoods" mostly correspond to widely accepted neighborhood boundaries. As such, the nature of these neighborhoods (compared to a variable like census tracts with less on-the-ground relevance) makes data reported by health planning neighborhoods accesible and useful for both professionals and the general public. 
+
+I believe that the choropleth and point maps are likely the most informative and about equally so, though I slightly prefer the choropleth  map for the way it shows boundaries clearly. 
+
+However, the choropleth  map is certainly the most interesting. Unfortunately, I think it is distinctly worse than the choropleth and point maps for two reasons. First, it implies a spatial relationship that doesn't neccesarily exist. To know the way neighborhoods' levels transition into eachother, we would really need more granular data. I worry that this interpolation isnoy  offering a particularly good estimate of the gradient from one neighborhood to another (if that even exists). Second, the uneven nature of our data (most neighborhoods have much lower levels than our highest neighborhoods) makes it visually difficult to understand.    
+
+Finally, I believe that the choropleth map is both the most appropriate to the data and overall best when all things are considered. The boundaries represent units that have meaning to both residents and researchers, it is graphically easy to understand, and it honestly represents the data we have.
